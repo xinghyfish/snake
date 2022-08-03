@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact name="snake:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/snake_jar</output-path>
+    <root id="root">
+      <element id="archive" name="snake.jar">
+        <element id="directory" name="META-INF">
+          <element id="file-copy" path="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" />
+        </element>
+        <element id="module-output" name="snake" />
+      </element>
+    </root>
+  </artifact>
+</component>
