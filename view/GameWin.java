@@ -20,7 +20,7 @@ public class GameWin extends JPanel implements ActionListener, KeyListener {
     static final int gameLocX = 50, gameLocY = 50;
     static final int gameWidth = 700, gameHeight = 500, size = 20;  // step size
 
-    static final int MAX_LATENCY = 125;
+    static final int MAX_LATENCY = 130;
     boolean startFlag = false, restoreFlag = false, deadFlag = false;
 
     JButton startButton, restoreButton, quitButton, pauseButton, saveButton;                 // initial window button
@@ -176,18 +176,16 @@ public class GameWin extends JPanel implements ActionListener, KeyListener {
         @Override
         public void run() {
             while (startFlag) {
+                deadFlag = gameController.processMove();
+                if (deadFlag) {
+                    pauseButton.setEnabled(false);
+                    startFlag = false;
+                    startButton.setEnabled(true);
+                    break;
+                }
                 try {
                     Thread.sleep(MAX_LATENCY - gameController.getSnakeController().getSnake().size());
-                    if (startFlag)
-                        startFlag = gameController.processMove();
-                    if (!startFlag) {
-                        pauseButton.setEnabled(false);
-                        deadFlag = true;
-                    }
-                    if (!deadFlag) repaint();
-                    else {
-                        startButton.setEnabled(true);
-                    }
+                    repaint();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

@@ -2,8 +2,8 @@ package controller;
 
 import model.Game;
 import model.Node;
-import model.Snake;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.Random;
 
 public class GameController {
     private final Game game;
-    private SnakeController snakeController;
+    private final SnakeController snakeController;
     public GameController(Game game) {
         this.game = game;
         snakeController = new SnakeController(game.getSnake());
@@ -34,8 +34,8 @@ public class GameController {
         generateFood();
     }
 
-    public boolean judge() {
-        return !isHitSelf() && !isHitWall();
+    public boolean isDead() {
+        return isHitSelf() || isHitWall();
     }
 
     /**
@@ -51,12 +51,22 @@ public class GameController {
         return false;
     }
 
+    public int getLimitX() {
+        return game.getWidth();
+    }
+
+    public int getLimitY() {
+        return game.getHeight();
+    }
+
     public boolean isHitWall() {
         Node head = game.getSnake().getHead();
         int limitX = game.getWidth(), limitY = game.getHeight();
         int[] curDrctArr = DRCT[snakeController.getSnake().getCurDrct()];
         int nextHeadX = head.getX() + curDrctArr[0], nextHeadY = head.getY() + curDrctArr[1];
-        return !(nextHeadX >= 0 && nextHeadY >= 0 && nextHeadX <= limitX && nextHeadY <= limitY);
+        boolean flag =  !(head.getX() >= 0 && head.getY() >= 0 && head.getX() < limitX && head.getY() < limitY);
+        if (flag) snakeController.rollback();
+        return flag;
     }
 
     public void generateFood() {
@@ -84,10 +94,11 @@ public class GameController {
         Node[] head_tail = snakeController.move();
         Node head = game.getSnake().getHead();
         if (game.getFood().getX() == head.getX() && game.getFood().getY() == head.getY()) {
-            Node tail = snakeController.incr();
+            snakeController.setOldTail(head_tail[1]);
+            Node tail = snakeController.grow();
             generateFood();
         }
-        return judge();
+        return isDead();
     }
 
     public SnakeController getSnakeController() {
@@ -99,7 +110,8 @@ public class GameController {
     }
 
     public boolean hasArchive() {
-        return false;
+        File file = new File("../resources/archive.json");
+        return file.exists();
     }
 
     public boolean saveGame() {
