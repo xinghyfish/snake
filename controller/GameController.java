@@ -3,7 +3,7 @@ package controller;
 import model.Game;
 import model.Node;
 
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,6 +19,7 @@ public class GameController {
     private final static int[][] DRCT = {
             {0, -1}, {0, 1}, {-1, 0}, {1, 0}
     };
+    private final static String archivePath = "resources/archive.sav";
 
     public GameController(int height, int width) {
         this.game = new Game(height, width);
@@ -34,8 +35,19 @@ public class GameController {
         generateFood();
     }
 
+    public int getLimitX() {
+        return game.getWidth();
+    }
+
+    public int getLimitY() {
+        return game.getHeight();
+    }
+
+
     public boolean isDead() {
-        return isHitSelf() || isHitWall();
+        boolean flag = isHitSelf() || isHitWall();
+        if (flag) snakeController.rollback();
+        return flag;
     }
 
     /**
@@ -51,22 +63,12 @@ public class GameController {
         return false;
     }
 
-    public int getLimitX() {
-        return game.getWidth();
-    }
-
-    public int getLimitY() {
-        return game.getHeight();
-    }
-
     public boolean isHitWall() {
         Node head = game.getSnake().getHead();
         int limitX = game.getWidth(), limitY = game.getHeight();
         int[] curDrctArr = DRCT[snakeController.getSnake().getCurDrct()];
         int nextHeadX = head.getX() + curDrctArr[0], nextHeadY = head.getY() + curDrctArr[1];
-        boolean flag =  !(head.getX() >= 0 && head.getY() >= 0 && head.getX() < limitX && head.getY() < limitY);
-        if (flag) snakeController.rollback();
-        return flag;
+        return !(head.getX() >= 0 && head.getY() >= 0 && head.getX() < limitX && head.getY() < limitY);
     }
 
     public void generateFood() {
@@ -110,15 +112,55 @@ public class GameController {
     }
 
     public boolean hasArchive() {
-        File file = new File("../resources/archive.json");
-        return file.exists();
+        File arcFile = new File(archivePath);
+        return arcFile.exists();
     }
 
-    public boolean saveGame() {
+    public boolean saveGame() throws IOException {
+        try{
+            File file = new File(archivePath);
+            if(file.createNewFile())
+                System.out.println("Successfully create file!");
+            else
+                file.delete();
+        }
+        catch(IOException ioe) {
+            ioe.printStackTrace();
+        }
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(archivePath));
+        bufferedWriter.write(getFood().getX() + " " + getFood().getY());
+        bufferedWriter.newLine();
+        bufferedWriter.flush();
+        bufferedWriter.write(String.valueOf(snakeController.getSnake().getCurDrct()));
+        bufferedWriter.newLine();
+        bufferedWriter.flush();
+        for (Node node : snakeController.getSnake().getBody()) {
+            bufferedWriter.write(node.getX() + " " + node.getY());
+            bufferedWriter.newLine();
+            bufferedWriter.flush();
+        }
         return true;
     }
 
-    public boolean restoreGame() {
+    public boolean reloadGame() throws IOException {
+        if (!hasArchive()) return false;
+
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(archivePath));
+        String lineStr = bufferedReader.readLine();
+        String[] pos = lineStr.split(" ");
+        game.setFood(new Node(Integer.parseInt(pos[0]), Integer.parseInt(pos[1])));
+        String drct = bufferedReader.readLine();
+        snakeController.getSnake().setCurDrct(Integer.parseInt(drct));
+        List<Node> body = new ArrayList<>();
+        while ((lineStr = bufferedReader.readLine()) != null) {
+            pos = lineStr.split(" ");
+            body.add(new Node(Integer.parseInt(pos[0]), Integer.parseInt(pos[1])));
+        }
+        game.getSnake().setBody(body);
         return true;
+    }
+
+    public boolean isWin() {
+        return snakeController.getSnake().size() == getLimitX() * getLimitY();
     }
 }

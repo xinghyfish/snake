@@ -4,14 +4,14 @@ import controller.GameController;
 import model.Node;
 
 import java.awt.*;
+import java.io.IOException;
 import java.util.List;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
-import javax.swing.JPanel;
-import javax.swing.JButton;
+import javax.swing.*;
 
 
 public class GameWin extends JPanel implements ActionListener, KeyListener {
@@ -21,29 +21,29 @@ public class GameWin extends JPanel implements ActionListener, KeyListener {
     static final int gameWidth = 700, gameHeight = 500, size = 20;  // step size
 
     static final int MAX_LATENCY = 130;
-    boolean startFlag = false, restoreFlag = false, deadFlag = false;
+    boolean startFlag = false, deadFlag = false;
 
-    JButton startButton, restoreButton, quitButton, pauseButton, saveButton;                 // initial window button
+    JButton startButton, reloadButton, quitButton, pauseButton, saveButton;                 // initial window button
 
     GameController gameController;
 
     public GameWin() {
         gameController = new GameController(gameHeight/size, gameWidth/size);
         startButton = new JButton("Start");
-        restoreButton = new JButton("Restore");
+        reloadButton = new JButton("Reload");
         quitButton = new JButton("Quit");
         pauseButton = new JButton("Pause");
         saveButton = new JButton("Save");
 
         setLayout(new FlowLayout(FlowLayout.LEFT));
         this.add(startButton);
-        this.add(restoreButton);
+        this.add(reloadButton);
         this.add(pauseButton);
         this.add(saveButton);
         this.add(quitButton);
 
         startButton.addActionListener(this);
-        restoreButton.addActionListener(this);
+        reloadButton.addActionListener(this);
         pauseButton.addActionListener(this);
         saveButton.addActionListener(this);
         quitButton.addActionListener(this);
@@ -52,12 +52,13 @@ public class GameWin extends JPanel implements ActionListener, KeyListener {
         quitButton.setEnabled(true);
         pauseButton.setEnabled(false);
         startButton.setEnabled(true);
-        restoreButton.setEnabled(gameController.hasArchive());
+        reloadButton.setEnabled(gameController.hasArchive());
         saveButton.setEnabled(false);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        boolean res;
         if (e.getSource() == startButton) {
             if (deadFlag) {
                 gameController.startGame();
@@ -65,24 +66,39 @@ public class GameWin extends JPanel implements ActionListener, KeyListener {
             }
             startFlag = true;
             startButton.setEnabled(false);
-            restoreButton.setEnabled(false);
+            reloadButton.setEnabled(false);
             pauseButton.setEnabled(true);
             new Thread(new SnakeThread()).start();
         }
-        else if (e.getSource() == restoreButton) {
+        else if (e.getSource() == reloadButton) {
             startButton.setEnabled(false);
-            restoreButton.setEnabled(false);
+            reloadButton.setEnabled(false);
             pauseButton.setEnabled(true);
-            gameController.restoreGame();
+            res = false;
+            try {
+                res = gameController.reloadGame();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            if (!res) System.err.println("Unable to reload game");
+            else repaint();
+            startButton.setEnabled(true);
+            deadFlag = false;
         }
         else if (e.getSource() == pauseButton) {
             startFlag = false;
             startButton.setEnabled(true);
             pauseButton.setEnabled(false);
             saveButton.setEnabled(true);
+            reloadButton.setEnabled(true);
         }
         else if (e.getSource() == saveButton) {
-            gameController.saveGame();
+            try {
+                res = gameController.saveGame();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            if (!res) System.err.println("Unable to save game!");
         }
         else {
             System.exit(0);
@@ -181,7 +197,12 @@ public class GameWin extends JPanel implements ActionListener, KeyListener {
                     pauseButton.setEnabled(false);
                     startFlag = false;
                     startButton.setEnabled(true);
+                    JOptionPane.showMessageDialog(getParent(),"YOU DIED");
+                    reloadButton.setEnabled(true);
                     break;
+                }
+                if (gameController.isWin()) {
+                    JOptionPane.showMessageDialog(getParent(), "HEIR OF FIRE DESTROYED");
                 }
                 try {
                     Thread.sleep(MAX_LATENCY - gameController.getSnakeController().getSnake().size());
