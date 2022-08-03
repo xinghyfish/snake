@@ -1,4 +1,6 @@
-package src.view;
+package src;
+
+import src.view.GameWin;
 
 import javax.swing.*;
 import java.awt.*;

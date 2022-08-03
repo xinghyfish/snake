@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: src.view.GameMain
+Main-Class: src.GameMain
 
