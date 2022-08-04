@@ -1,10 +1,13 @@
 package src.controller;
 
 import com.sun.tools.javac.Main;
+import src.GameMain;
 import src.model.Game;
 import src.model.Node;
 
 import java.io.*;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -16,12 +19,14 @@ public class GameController {
     private final static int[][] DRCT = {
             {0, -1}, {0, 1}, {-1, 0}, {1, 0}
     };
-    private final static String archivePath = String.valueOf(Main.class.getResource("src/resources/archive.sav"));
+    private final static String archivePath = URLDecoder.decode(GameController.class.getProtectionDomain().getCodeSource().getLocation().getFile(), StandardCharsets.UTF_8)
+                                                + "archive.sav";
 
     public GameController(int height, int width) {
         this.game = new Game(height, width);
         snakeController = new SnakeController(game.getSnake());
         startGame();
+        System.out.println(archivePath);
     }
 
     public void startGame() {
